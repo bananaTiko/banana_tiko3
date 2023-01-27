@@ -263,10 +263,6 @@ private:
 	 */
 	void set_resume_hostname();
 
-	/**
-	 * @brief Clean up resources
-	 */
-	void cleanup();
 public:
 	/**
 	 * @brief Owning cluster
