@@ -20,6 +20,16 @@
  ************************************************************************************/
 #pragma once
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__) || defined(_WIN64)
+#include <memory_resource>
+#define ALLOCATOR(T) std::pmr::polymorphic_allocator<T>
+#elif defined(__APPLE__) 
+#define ALLOCATOR(T) std::allocator<T>
+#elif defined(__linux__)
+#include <experimental/memory_resource>
+#define ALLOCATOR(T) std::pmr::polymorphic_allocator<T>
+#endif
+
 #include <shared_mutex>
 
 #ifdef max
@@ -77,51 +87,14 @@ namespace dpp {
 		}
 	};
 
-	template<typename OTy> class object_allocator {
-	public:
-		using value_type = OTy;
-		using size_type = size_t;
-		using difference_type = std::ptrdiff_t;
-		using pointer = value_type*;
-		using propagate_on_container_move_assignment = std::true_type;
-
-		template<typename U> struct rebind {
-			using other = object_allocator<U>;
-		};
-
-		inline object_allocator() noexcept {};
-
-		template<typename U> inline object_allocator(const object_allocator<U>&) noexcept {};
-
-		inline pointer allocate(size_type n) {
-			if (n > std::numeric_limits<size_type>::max() / sizeof(value_type)) {
-				throw std::bad_alloc();
-			}
-			pointer p = static_cast<pointer>(operator new[](n * sizeof(value_type)));
-			return p;
-		}
-
-		inline void deallocate(pointer p, size_type n) noexcept {
-			operator delete[](p);
-		}
-
-		template<typename... Args> inline void construct(value_type* p, Args&&... args) noexcept {
-			new (static_cast<void*>(p)) value_type(std::forward<Args>(args)...);
-		}
-
-		inline void destroy(value_type* p) noexcept {
-			p->~value_type();
-		}
-	};
-
 	template<typename KTy, typename OTy, typename KATy = key_accessor<KTy, OTy>> class memory_core {
 	public:
 		using key_type = KTy;
 		using value_type = OTy;
 		using key_accessor = KATy;
 		using reference = value_type&;
-		using const_reference = const reference;
-		using pointer = value_type*;
+		using const_reference = const value_type&;
+		using pointer = OTy*;
 		using size_type = size_t;
 		using key_hasher = fnv1a_hash<key_type>;
 
@@ -194,7 +167,7 @@ namespace dpp {
 			value_type object{};
 		};
 
-		using sentinel_allocator = object_allocator<sentinel_holder>;
+		using sentinel_allocator = ALLOCATOR(sentinel_holder);
 
 		inline memory_core(size_type new_capacity) : capacity(new_capacity), size(0), data(allocator.allocate(new_capacity)) {
 			for (size_t x = 0; x < new_capacity; ++x) {
@@ -483,8 +456,8 @@ namespace dpp {
 		using key_type = KTy;
 		using value_type = OTy;
 		using reference = value_type&;
-		using const_reference = const reference;
-		using pointer = value_type*;
+		using const_reference = const value_type&;
+		using pointer = OTy*;
 		using key_accessor = KATy;
 		using size_type = size_t;
 		using iterator = typename memory_core<key_type, value_type>::memory_core_iterator;
