@@ -256,7 +256,9 @@ awaitable<confirmation_callback_t> co_interaction_response_edit(const std::strin
  * @return message returned object on completion
  * \memberof dpp::cluster
  */
-awaitable<confirmation_callback_t> co_interaction_response_get_original(const std::string &token);
+auto inline co_interaction_response_get_original(const std::string &token) {
+	return dpp::awaitable(this, [&] (auto cc) { this->interaction_response_get_original(token, cc); }); 
+}
 
 /**
  * @brief Create a followup message to a slash command
@@ -329,7 +331,9 @@ awaitable<confirmation_callback_t> co_interaction_followup_get(const std::string
  * @return message returned object on completion
  * \memberof dpp::cluster
  */
-awaitable<confirmation_callback_t> co_interaction_followup_get_original(const std::string &token);
+auto inline co_interaction_followup_get_original(const std::string &token) {
+	return dpp::awaitable(this, [&] (auto cc) { this->interaction_followup_get_original(token, cc); }); 
+}
 
 /**
  * @brief Get all auto moderation rules for a guild
