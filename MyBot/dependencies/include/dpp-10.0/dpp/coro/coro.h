@@ -84,10 +84,12 @@ class task;
 struct job;
 
 #ifdef DPP_CORO_TEST
-template <typename T>
 /**
- * @brief Allocation count of a certain type, for testing purposes
+ * @brief Allocation count of a certain type, for testing purposes.
+ *
+ * @todo Remove when coro is stable
  */
+template <typename T>
 inline int coro_alloc_count = 0;
 #endif
 

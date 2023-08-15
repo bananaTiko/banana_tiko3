@@ -106,7 +106,7 @@ public:
 	 */
 	coroutine &operator=(coroutine &&other) noexcept {
 		handle = std::exchange(other.handle, nullptr);
-		return (*this);
+		return *this;
 	}
 
 	/**
@@ -118,10 +118,10 @@ public:
 	 */
 	bool await_ready() const {
 		if (!handle)
-			throw dpp::invalid_operation_exception("cannot co_await an empty task");
+			throw dpp::invalid_operation_exception("cannot co_await an empty coroutine");
 		if (handle.done())
-			throw dpp::invalid_operation_exception("cannot co_await a finished task");
-		return (false);
+			throw dpp::invalid_operation_exception("cannot co_await a finished coroutine");
+		return false;
 	}
 
 	/**
@@ -244,7 +244,7 @@ namespace detail {
 		 * @return false Always return false, we need to suspend
 		 */
 		bool await_ready() const noexcept {
-			return (false);
+			return false;
 		}
 
 		/**

@@ -255,8 +255,13 @@ struct task_promise_base {
 	}
 #endif
 
+	/**
+	 * @brief First function called when the coroutine associated with this promise co_awaits an expression.
+	 *
+	 * Emulates the default behavior and sets is_sync to false if the awaited object is not ready.
+	 */
 	template <typename T>
-	decltype(auto) await_transform(T&& expr)  {
+	T await_transform(T&& expr) {
 		if constexpr (requires { expr.operator co_await(); }) {
 			auto awaiter = expr.operator co_await();
 			if (!awaiter.await_ready())
