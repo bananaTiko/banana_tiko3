@@ -113,11 +113,14 @@ public:
 	 * @brief First function called by the standard library when the task is co_await-ed.
 	 *
 	 * @remark Do not call this manually, use the co_await keyword instead.
+	 * @throws invalid_operation_exception if the coroutine is empty or finished.
 	 * @return true Always suspend, we need to start the coroutine.
 	 */
-	bool await_ready() const noexcept {
-		assert(handle && "cannot co_await an empty coroutine");
-		assert(!handle.done() && "cannot co_await a finished coroutine");
+	bool await_ready() const {
+		if (!handle)
+			throw dpp::invalid_operation_exception("cannot co_await an empty task");
+		if (handle.done())
+			throw dpp::invalid_operation_exception("cannot co_await a finished task");
 		return (false);
 	}
 
@@ -130,11 +133,9 @@ public:
 	 * @param caller The calling coroutine, now suspended
 	 */
 	template <typename T>
-	void await_suspend(detail::std_coroutine::coroutine_handle<T> caller) {
-		if constexpr (requires (T t) { t.is_sync = false; })
-			caller.promise().is_sync = false;
+	detail::coroutine_handle<R> await_suspend(detail::std_coroutine::coroutine_handle<T> caller) {
 		handle.promise().parent = caller;
-		handle.resume();
+		return handle;
 	}
 
 	/**
@@ -155,7 +156,11 @@ public:
 namespace detail {
 	template <typename R>
 	struct coroutine_final_awaiter;
-	
+
+#ifdef DPP_CORO_TEST
+	struct coroutine_promise_base{};
+#endif
+
 	/**
 	 * @brief Promise type for coroutine.
 	 */
@@ -175,6 +180,16 @@ namespace detail {
 		 * @brief Pointer to an uncaught exception thrown by the coroutine
 		 */
 		std::exception_ptr exception{nullptr};
+
+#ifdef DPP_CORO_TEST
+		coroutine_promise() {
+			++coro_alloc_count<coroutine_promise_base>;
+		}
+
+		~coroutine_promise() {
+			--coro_alloc_count<coroutine_promise_base>;
+		}
+#endif
 
 		/**
 		 * @brief Function called by the standard library when reaching the end of a coroutine
